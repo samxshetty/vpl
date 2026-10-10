@@ -134,7 +134,6 @@ function Card({
   );
 
   const base = "w-64 rounded-2xl border bg-white/[0.03] text-left";
-  if (m.bye) return <div className={clsx(base, "border-white/[0.06] opacity-60")}>{inner}</div>;
   return (
     <button
       onClick={() => onOpen(m)}
@@ -142,7 +141,9 @@ function Card({
       className={clsx(
         base,
         "transition-colors hover:border-white/25 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-[#f59e0b]",
-        m.status === "LIVE" ? "border-[#f59e0b]/50" : "border-white/10"
+        m.bye
+          ? "border-dashed border-[#f59e0b]/35 opacity-80 hover:opacity-100"
+          : m.status === "LIVE" ? "border-[#f59e0b]/50" : "border-white/10"
       )}
     >
       {inner}

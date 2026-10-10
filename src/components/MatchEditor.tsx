@@ -34,11 +34,12 @@ export function MatchEditor({
   const [scoreB, setScoreB] = useState(match.scoreB);
   const [result, setResult] = useState<MatchResult>(match.result);
   const [note, setNote] = useState(match.note);
+  const [isBye, setIsBye] = useState(!!match.bye);
   const [tried, setTried] = useState(false);
 
   const isKnockout = match.format === "KNOCKOUT";
   // Later knockout rounds are filled by the winners of earlier ones.
-  const sidesLocked = isKnockout && match.round > 1;
+  const sidesLocked = isKnockout && match.round > 1 && !match.bye;
   const noun = sport.kind === "TEAM" ? "team" : "player";
 
   const venues = useMemo(
@@ -53,7 +54,7 @@ export function MatchEditor({
   if (aId && aId === bId) errors.b = `Pick two different ${noun}s.`;
   if (date && !time) errors.time = "Add a start time.";
   if (!date && time) errors.date = "Add a date.";
-  if ((status === "LIVE" || status === "COMPLETED") && (!aId || !bId)) {
+  if (!isBye && (status === "LIVE" || status === "COMPLETED") && (!aId || !bId)) {
     errors.status = `Both sides need a ${noun} before a match can be live or finished.`;
   }
   if (status === "COMPLETED" && !result && aId && bId) errors.result = "Choose who won.";
@@ -62,14 +63,15 @@ export function MatchEditor({
     ...match,
     stage: stage.trim(),
     aId: aId || null,
-    bId: bId || null,
+    bId: isBye ? null : (bId || null),
+    bye: isKnockout ? isBye : match.bye,
     startsAt,
     venue: venue.trim(),
-    status,
-    scoreA: scoreA.trim(),
-    scoreB: scoreB.trim(),
-    result: status === "COMPLETED" ? result : null,
-    note: note.trim(),
+    status: isKnockout && isBye ? "COMPLETED" : status,
+    scoreA: isBye ? "" : scoreA.trim(),
+    scoreB: isBye ? "" : scoreB.trim(),
+    result: isKnockout && isBye ? "A" : (status === "COMPLETED" ? result : null),
+    note: isBye ? "Bye" : note.trim(),
   };
   const conflicts = findConflicts(draft, db.matches);
 
@@ -131,6 +133,37 @@ export function MatchEditor({
           {(id) => <input id={id} className={inputClass} value={stage} onChange={(e) => setStage(e.target.value)} />}
         </Field>
 
+        {isKnockout && (
+          <label className="sm:col-span-2 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 accent-[#f59e0b]"
+              checked={isBye}
+              disabled={match.round > 1 && !match.bye}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setIsBye(checked);
+                if (checked) {
+                  setBId("");
+                  setStatus("COMPLETED");
+                  setResult("A");
+                  setScoreA("");
+                  setScoreB("");
+                  setNote("Bye");
+                } else {
+                  setStatus("UPCOMING");
+                  setResult(null);
+                  setNote("");
+                }
+              }}
+            />
+            <span>
+              <span className="block text-sm font-semibold text-white">This match is a bye</span>
+              <span className="block text-xs text-white/45 mt-1">A bye advances Team/Player A automatically. Uncheck it to restore a normal match.</span>
+            </span>
+          </label>
+        )}
+
         <Field
           label={sport.kind === "TEAM" ? "Team A" : "Player A"}
           hint={sidesLocked ? "Filled in automatically from the previous round." : undefined}
@@ -148,7 +181,7 @@ export function MatchEditor({
         </Field>
         <Field label={sport.kind === "TEAM" ? "Team B" : "Player B"} error={err("b")}>
           {(id) => (
-            <Select id={id} value={bId} disabled={sidesLocked} onChange={(e) => setBId(e.target.value)}>
+            <Select id={id} value={bId} disabled={sidesLocked || isBye} onChange={(e) => setBId(e.target.value)}>
               <option value="">To be decided</option>
               {entries.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -202,7 +235,7 @@ export function MatchEditor({
             )}
           </Field>
 
-          {status !== "UPCOMING" && (
+          {status !== "UPCOMING" && !isBye && (
             <>
               <Field label={`Score: ${aId ? nameA : "A"}`} hint="Any format works, for example 112/4 or 21-18, 21-14.">
                 {(id) => <input id={id} className={inputClass} value={scoreA} onChange={(e) => setScoreA(e.target.value)} />}
@@ -213,7 +246,7 @@ export function MatchEditor({
             </>
           )}
 
-          {status === "COMPLETED" && (
+          {status === "COMPLETED" && !isBye && (
             <>
               <Field label="Result" error={err("result")}>
                 {(id) => (
@@ -230,7 +263,7 @@ export function MatchEditor({
               </Field>
             </>
           )}
-          {status === "LIVE" && (
+          {status === "LIVE" && !isBye && (
             <Field label="Live update" hint="Optional, for example “Innings 2, 13.1 ov”." className="sm:col-span-2">
               {(id) => <input id={id} className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} />}
             </Field>
