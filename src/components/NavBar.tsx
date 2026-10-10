@@ -43,11 +43,11 @@ export function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 w-full glass-panel !rounded-none !border-x-0 !border-t-0 border-b border-white/10 shadow-2xl">
+      <nav className="relative md:fixed md:top-0 md:left-0 md:right-0 z-50 w-full glass-panel !rounded-none !border-x-0 !border-t-0 border-b border-white/10 shadow-2xl">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-16 sm:h-20 md:h-20">
             <Link href="/" className="flex items-center shrink-0" aria-label="VPL home">
-              <div className="relative w-28 sm:w-32 h-14 overflow-hidden">
+              <div className="relative w-24 sm:w-32 h-12 sm:h-14 overflow-hidden">
                 <Image src="/vpl-logo-transparent.png" alt="VPL Logo" fill sizes="128px" className="object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]" priority />
               </div>
             </Link>
@@ -56,7 +56,7 @@ export function NavBar() {
             </div>
             <button
               type="button"
-              className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl border border-white/15 text-white hover:bg-white/10"
+              className="md:hidden inline-flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-white/15 text-white hover:bg-white/10"
               aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
@@ -71,7 +71,7 @@ export function NavBar() {
           )}
         </div>
       </nav>
-      <div className="h-20" aria-hidden="true" />
+      <div className="hidden md:block h-20" aria-hidden="true" />
     </>
   );
 }

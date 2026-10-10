@@ -20,7 +20,7 @@ const STATUS_TABS: Array<{ id: StatusFilter; label: string }> = [
 
 const chip = (active: boolean) =>
   clsx(
-    "px-4 py-2 rounded-full border text-xs font-bold uppercase tracking-widest font-sans transition-colors outline-none focus-visible:outline-2 focus-visible:outline-[#f59e0b]",
+    "px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border text-[10px] sm:text-xs font-bold uppercase tracking-[0.08em] sm:tracking-widest font-sans transition-colors outline-none focus-visible:outline-2 focus-visible:outline-[#f59e0b] whitespace-nowrap",
     active ? "bg-white text-black border-white" : "border-white/15 text-white/55 hover:text-white hover:border-white/30"
   );
 
@@ -70,21 +70,21 @@ export function FixturesView({ mode = "full", initialStatus }: { mode?: "full" |
   return (
     <>
       <LiveError />
-      <div className="space-y-4 mb-10">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
+      <div className="space-y-3 sm:space-y-4 mb-7 sm:mb-10">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2" role="group" aria-label="Filter by status">
           {STATUS_TABS.map((t) => (
             <button key={t.id} onClick={() => setStatus(t.id)} aria-pressed={status === t.id} className={chip(status === t.id)}>
               {t.label}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by sport">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2" role="group" aria-label="Filter by sport">
           <button onClick={() => setSportId("ALL")} aria-pressed={sportId === "ALL"} className={chip(sportId === "ALL")}>
             All sports
           </button>
           {SPORTS.map((s) => (
             <button key={s.id} onClick={() => setSportId(s.id)} aria-pressed={sportId === s.id} className={chip(sportId === s.id)}>
-              <span aria-hidden className="mr-1.5">{s.icon}</span>
+              <span aria-hidden className="mr-1 sm:mr-1.5 text-xs sm:text-sm">{s.icon}</span>
               {s.name}
             </button>
           ))}
