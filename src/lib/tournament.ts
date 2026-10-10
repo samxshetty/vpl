@@ -4,13 +4,38 @@ import { winnerId } from "./format";
 /** After a knockout match changes, push its winner (or clear the slot) into the next round. */
 export function propagateWinner(matches: Match[], changed: Match): Match[] {
   if (changed.format !== "KNOCKOUT" || !changed.nextMatchId) return matches;
-  const w = changed.status === "COMPLETED" ? winnerId(changed) : null;
-  return matches.map((m) => {
-    if (m.id !== changed.id && m.id === changed.nextMatchId) {
-      return changed.nextSide === "A" ? { ...m, aId: w } : { ...m, bId: w };
-    }
-    return m;
-  });
+
+  const nextMatches = matches.map((m) => ({ ...m }));
+  const byId = new Map(nextMatches.map((m) => [m.id, m]));
+  const queue: Match[] = [changed];
+  const visited = new Set<string>();
+
+  while (queue.length) {
+    const source = queue.shift()!;
+    if (visited.has(source.id) || source.format !== "KNOCKOUT" || !source.nextMatchId) continue;
+    visited.add(source.id);
+    const target = byId.get(source.nextMatchId);
+    if (!target) continue;
+
+    const winner = source.status === "COMPLETED" ? winnerId(source) : null;
+    const side = source.nextSide;
+    if (!side) continue;
+    const oldParticipant = side === "A" ? target.aId : target.bId;
+    if (oldParticipant === winner) continue;
+
+    if (side === "A") target.aId = winner;
+    else target.bId = winner;
+
+    // A changed participant invalidates any result already recorded in that downstream match.
+    target.status = "UPCOMING";
+    target.scoreA = "";
+    target.scoreB = "";
+    target.result = null;
+    target.note = target.bye ? "Bye" : "";
+    queue.push(target);
+  }
+
+  return nextMatches;
 }
 
 export interface StandingRow {

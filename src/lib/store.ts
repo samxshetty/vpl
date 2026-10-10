@@ -3,7 +3,6 @@
 import { useSyncExternalStore } from "react";
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import type { DB, Entry, FormatType, Match } from "./types";
-import { buildSeed } from "./seed";
 import { propagateWinner } from "./tournament";
 import { getSupabase } from "./supabase/client";
 import {
@@ -248,9 +247,8 @@ const actions = {
   },
 
   generateFixtures(sportId: string, format: FormatType, matches: Match[], mode: "replace" | "append") {
-    const had = snapshot.db.formats[sportId];
     const updatedAt = new Date().toISOString();
-    const nextFormat = mode === "append" && had ? had : { format, updatedAt };
+    const nextFormat = { format, updatedAt };
 
     update((d) => {
       const kept = mode === "replace" ? d.matches.filter((m) => m.sportId !== sportId) : d.matches;
@@ -278,25 +276,7 @@ const actions = {
     enqueue("Clearing the format", () => getSupabase()!.from("sport_formats").delete().eq("sport_id", sportId));
   },
 
-  /** Replaces EVERYTHING in the database with the built-in sample data. */
-  loadSampleData() {
-    const seed = buildSeed();
-    update(() => seed);
-    enqueue("Clearing matches", () => getSupabase()!.from("matches").delete().not("id", "is", null));
-    enqueue("Clearing entries", () => getSupabase()!.from("entries").delete().not("id", "is", null));
-    enqueue("Clearing formats", () => getSupabase()!.from("sport_formats").delete().not("sport_id", "is", null));
-    for (const rows of chunk(seed.entries.map(entryToRow))) {
-      enqueue("Saving sample entries", () => getSupabase()!.from("entries").upsert(rows));
-    }
-    for (const rows of chunk(seed.matches.map(matchToRow))) {
-      enqueue("Saving sample matches", () => getSupabase()!.from("matches").upsert(rows));
-    }
-    enqueue("Saving sample formats", () =>
-      getSupabase()!.from("sport_formats").upsert(
-        Object.entries(seed.formats).map(([sport_id, f]) => ({ sport_id, format: f.format, updated_at: f.updatedAt }))
-      )
-    );
-  },
+
 };
 
 /* ------------------------------ Hooks ------------------------------ */

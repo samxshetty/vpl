@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import clsx from "clsx";
@@ -8,7 +7,6 @@ import { useStore } from "@/lib/store";
 import { SPORTS } from "@/lib/sports";
 import { FORMAT_LABEL } from "@/lib/types";
 import { fmtDateTime, sortMatches } from "@/lib/format";
-import { Button, ConfirmDialog } from "./ui";
 
 export function Dashboard() {
   const { ready } = useStore();
@@ -29,10 +27,7 @@ function Skeleton() {
 }
 
 function Loaded() {
-  const { db, loadSampleData } = useStore();
-  const [confirmReset, setConfirmReset] = useState(false);
-
-  const isEmpty = db.entries.length === 0 && db.matches.length === 0;
+  const { db } = useStore();
   const live = db.matches.filter((m) => m.status === "LIVE").length;
   const upcoming = db.matches.filter((m) => m.status === "UPCOMING" && !m.bye).length;
   // Section placeholders are pre-created so fixtures can be prepared; count only entries with a completed roster as registered.
@@ -142,21 +137,7 @@ function Loaded() {
         })}
       </div>
 
-      {(isEmpty || process.env.NEXT_PUBLIC_ENABLE_DEMO_RESET === "true") && (
-        <div className="mt-16 flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => (isEmpty ? loadSampleData() : setConfirmReset(true))}>
-            {isEmpty ? "Load sample data" : "Reset to sample data"}
-          </Button>
-        </div>
-      )}
-      <ConfirmDialog
-        open={confirmReset}
-        title="Replace ALL live data with sample data?"
-        message="This deletes every team, player and match in the live database, for everyone, and loads the original sample data. It cannot be undone."
-        confirmLabel="Reset data"
-        onConfirm={loadSampleData}
-        onClose={() => setConfirmReset(false)}
-      />
+
     </>
   );
 }

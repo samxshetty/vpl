@@ -16,17 +16,28 @@ const FORMATS: Array<{ id: FormatType; blurb: string }> = [
   { id: "SINGLE", blurb: "One match between two sides." },
 ];
 
+// Defaults use the current category IDs (not the legacy parent schedule IDs).
 const DURATION: Record<string, number> = {
-  cricket: 120,
-  football: 60,
-  basketball: 45,
-  volleyball: 45,
-  throwball: 45,
-  "tug-of-war": 20,
-  "mixed-relay": 20,
-  badminton: 30,
-  chess: 45,
-  carrom: 30,
+  "cricket-men": 120, "cricket-women": 90,
+  "football-men": 60, "basketball-men": 30,
+  "volleyball-men": 45, "throwball-women": 45,
+  "tug-of-war-men": 20, "tug-of-war-women": 20,
+  "relay-men": 20, "relay-women": 20,
+  "badminton-men-singles": 30, "badminton-women-singles": 30, "badminton-mixed-doubles": 30,
+  "chess-men": 45, "chess-women": 45, "carrom-men": 30, "carrom-women": 30,
+  "dodgeball-women": 20,
+};
+
+// Default formats are explicit per category. Admins can still choose another format.
+const DEFAULT_FORMAT: Record<string, FormatType> = {
+  "chess-men": "ROUND_ROBIN", "chess-women": "ROUND_ROBIN",
+  "cricket-men": "KNOCKOUT", "cricket-women": "KNOCKOUT",
+  "football-men": "KNOCKOUT", "volleyball-men": "KNOCKOUT",
+  "badminton-men-singles": "KNOCKOUT", "badminton-women-singles": "KNOCKOUT",
+  "badminton-mixed-doubles": "KNOCKOUT", "carrom-men": "KNOCKOUT", "carrom-women": "KNOCKOUT",
+  "basketball-men": "KNOCKOUT", "throwball-women": "KNOCKOUT",
+  "tug-of-war-men": "KNOCKOUT", "tug-of-war-women": "KNOCKOUT",
+  "relay-men": "KNOCKOUT", "relay-women": "KNOCKOUT", "dodgeball-women": "KNOCKOUT",
 };
 
 export function ScheduleTab({ sport, onGenerated }: { sport: Sport; onGenerated: () => void }) {
@@ -35,7 +46,7 @@ export function ScheduleTab({ sport, onGenerated }: { sport: Sport; onGenerated:
   const existing = db.matches.filter((m) => m.sportId === sport.id);
   const noun = sport.kind === "TEAM" ? "teams" : "players";
 
-  const [fmt, setFmt] = useState<FormatType>(db.formats[sport.id]?.format ?? "ROUND_ROBIN");
+  const [fmt, setFmt] = useState<FormatType>(db.formats[sport.id]?.format ?? DEFAULT_FORMAT[sport.id] ?? "KNOCKOUT");
   const [picked, setPicked] = useState<Set<string>>(() => new Set(entries.map((e) => e.id)));
   const [singleA, setSingleA] = useState(entries[0]?.id ?? "");
   const [singleB, setSingleB] = useState(entries[1]?.id ?? "");
@@ -68,8 +79,13 @@ export function ScheduleTab({ sport, onGenerated }: { sport: Sport; onGenerated:
   if (!startTime || !endTime) errors.push("Set the daily start and end times.");
   if (!(dur >= 5)) errors.push("Match length must be at least 5 minutes.");
   if (!(gp >= 0)) errors.push("Break between matches can’t be negative.");
-  if (startTime && endTime && dur >= 5 && endTime <= startTime) errors.push("The daily end time must be after the start time.");
+  if (fmt !== "SINGLE" && startTime && endTime && endTime <= startTime) errors.push("The daily end time must be after the start time.");
+  if (fmt !== "SINGLE" && startTime && endTime && dur >= 5 && endTime > startTime) {
+    const minutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+    if (minutes(startTime) + dur > minutes(endTime)) errors.push("A match must fit between the daily start and finish times.");
+  }
   if (venues.length === 0) errors.push("Add at least one venue.");
+  if (existing.length > 0 && mode === "append" && existing.some((m) => m.format !== fmt)) errors.push("These fixtures use a different format. Replace them to change format, or select the existing format to append.");
 
   const opts: ScheduleOpts = { startDate, startTime, endTime, durationMin: dur, gapMin: gp, venues };
 
