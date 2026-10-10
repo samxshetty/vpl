@@ -10,19 +10,62 @@ export default function SportsHub() {
       </div>
 
       <NavBar />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <div className="mb-16 text-center">
-          <p className="text-sm md:text-base font-semibold uppercase tracking-[0.35em] text-white/60 mb-4">VISTA PRESENTS</p>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6">VISTA PREMIER LEAGUE</h1>
+          <p className="text-sm md:text-base font-semibold uppercase tracking-[0.35em] text-white/60 mb-4">
+            VISTA PRESENTS
+          </p>
+
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6">
+            VISTA PREMIER LEAGUE
+          </h1>
         </div>
+
+        {/* 1. Live Matches */}
         <LiveMatchesSection />
-        <section className="mt-2" aria-labelledby="match-centre-heading">
+
+        {/* 2. Finished Matches — no filters, maximum 4 cards */}
+        <section className="mt-2" aria-labelledby="finished-matches-heading">
           <div className="mb-8">
-            <p className="text-[#f59e0b] text-xs font-bold uppercase tracking-[0.25em] mb-3">Fixtures · Live scores · Results</p>
-            <h2 id="match-centre-heading" className="text-3xl md:text-4xl font-bold tracking-tighter text-white">MATCH CENTRE</h2>
-            <p className="mt-2 text-sm text-white/50 font-sans normal-case">Follow every confirmed fixture, live match, and final result across VPL 2026.</p>
+            <h2
+              id="finished-matches-heading"
+              className="text-3xl md:text-4xl font-bold tracking-tighter text-white"
+            >
+              FINISHED MATCHES
+            </h2>
           </div>
-          <FixturesView mode="preview" />
+
+          <FixturesView
+            mode="preview"
+            initialStatus="COMPLETED"
+            hideFilters
+          />
+        </section>
+
+        {/* 3. Match Centre — filters remain available */}
+        <section className="mt-10" aria-labelledby="match-centre-heading">
+          <div className="mb-8">
+            <p className="text-[#f59e0b] text-xs font-bold uppercase tracking-[0.25em] mb-3">
+              Fixtures · Live scores · Results
+            </p>
+
+            <h2
+              id="match-centre-heading"
+              className="text-3xl md:text-4xl font-bold tracking-tighter text-white"
+            >
+              MATCH CENTRE
+            </h2>
+
+            <p className="mt-2 text-sm text-white/50 font-sans normal-case">
+              Follow every confirmed fixture, live match, and final result across VPL 2026.
+            </p>
+          </div>
+
+          <FixturesView
+            mode="preview"
+            initialStatus="UPCOMING"
+          />
         </section>
       </div>
     </main>

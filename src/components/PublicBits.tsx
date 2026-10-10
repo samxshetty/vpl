@@ -16,6 +16,11 @@ export function MatchCard({ m, map }: { m: Match; map: EntryMap }) {
   const bWon = m.status === "COMPLETED" && m.result === "B";
   const started = m.status !== "UPCOMING";
 
+  const winner =
+    m.status === "COMPLETED" && (m.result === "A" || m.result === "B")
+      ? sideTitle(map, m.result === "A" ? m.aId : m.bId)
+      : null;
+
   return (
     <Link
       href={`/matches/${m.id}`}
@@ -23,35 +28,64 @@ export function MatchCard({ m, map }: { m: Match; map: EntryMap }) {
     >
       <div className="flex items-center justify-between gap-4 mb-4">
         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#f59e0b] font-sans">
-          <span aria-hidden className="mr-2">{sport?.icon}</span>
-          {sport?.name ?? m.sportId} <span className="text-white/20 mx-1">/</span> {m.stage}
+          <span aria-hidden className="mr-2">
+            {sport?.icon}
+          </span>
+          {sport?.name ?? m.sportId}{" "}
+          <span className="text-white/20 mx-1">/</span> {m.stage}
         </span>
         <StatusBadge status={m.status} />
       </div>
+
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-        <div className={clsx("text-2xl md:text-3xl font-display font-bold tracking-tight truncate", bWon ? "text-white/40" : "text-white")}>
+        <div
+          className={clsx(
+            "text-2xl md:text-3xl font-display font-bold tracking-tight truncate",
+            bWon ? "text-white/40" : "text-white"
+          )}
+        >
           {sideTitle(map, m.aId)}
         </div>
+
         <div className="text-center min-w-20">
           {started ? (
-            <div
-              className={clsx(
-                "font-numbers text-2xl md:text-3xl tracking-wider whitespace-nowrap",
-                m.status === "COMPLETED"
-                  ? "text-[#facc15]"
-                  : "text-[#f59e0b]"
+            <>
+              <div
+                className={clsx(
+                  "font-numbers text-2xl md:text-3xl tracking-wider whitespace-nowrap",
+                  m.status === "COMPLETED"
+                    ? "text-[#facc15]"
+                    : "text-[#f59e0b]"
+                )}
+              >
+                {m.scoreA || "–"}{" "}
+                <span className="text-white/25">-</span>{" "}
+                {m.scoreB || "–"}
+              </div>
+
+              {winner && (
+                <div className="mt-2 text-xs sm:text-sm font-bold text-[#facc15] font-sans normal-case whitespace-nowrap">
+                  Winner: {winner}
+                </div>
               )}
-            >
-              {m.scoreA || "–"} <span className="text-white/25">-</span> {m.scoreB || "–"}
-            </div>
+            </>
           ) : (
-            <div className="text-xs text-white/30 font-mono px-2 py-0.5 rounded border border-white/5 bg-black/40">VS</div>
+            <div className="text-xs text-white/30 font-mono px-2 py-0.5 rounded border border-white/5 bg-black/40">
+              VS
+            </div>
           )}
         </div>
-        <div className={clsx("text-2xl md:text-3xl font-display font-bold tracking-tight truncate text-right", aWon ? "text-white/40" : "text-white")}>
+
+        <div
+          className={clsx(
+            "text-2xl md:text-3xl font-display font-bold tracking-tight truncate text-right",
+            aWon ? "text-white/40" : "text-white"
+          )}
+        >
           {sideTitle(map, m.bId)}
         </div>
       </div>
+
       <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 mt-4 pt-4 border-t border-white/[0.05] text-xs text-white/45 font-sans normal-case">
         <span>{fmtDateTime(m.startsAt)}</span>
         <span>{m.venue}</span>
@@ -75,9 +109,14 @@ export function PageSkeleton() {
 /** Shown only when live data can't be loaded. */
 export function LiveError() {
   const { error } = useLiveDB();
+
   if (!error) return null;
+
   return (
-    <p role="alert" className="mb-8 rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm text-red-200 font-sans normal-case">
+    <p
+      role="alert"
+      className="mb-8 rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm text-red-200 font-sans normal-case"
+    >
       {error}
     </p>
   );
