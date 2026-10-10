@@ -34,7 +34,14 @@ export function MatchCard({ m, map }: { m: Match; map: EntryMap }) {
         </div>
         <div className="text-center min-w-20">
           {started ? (
-            <div className="font-numbers text-2xl md:text-3xl text-[#f59e0b] tracking-wider whitespace-nowrap">
+            <div
+              className={clsx(
+                "font-numbers text-2xl md:text-3xl tracking-wider whitespace-nowrap",
+                m.status === "COMPLETED"
+                  ? "text-[#facc15]"
+                  : "text-[#f59e0b]"
+              )}
+            >
               {m.scoreA || "–"} <span className="text-white/25">-</span> {m.scoreB || "–"}
             </div>
           ) : (
