@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import clsx from "clsx";
 import { useLiveDB } from "@/lib/store";
 import { SPORTS } from "@/lib/sports";
@@ -35,19 +36,36 @@ export function groupByDay(matches: Match[]): Array<{ key: string; label: string
   return groups;
 }
 
-export function FixturesView() {
+export function FixturesView({ mode = "full", initialStatus }: { mode?: "full" | "preview"; initialStatus?: StatusFilter }) {
   const { ready, db } = useLiveDB();
-  const [status, setStatus] = useState<StatusFilter>("ALL");
+  const [status, setStatus] = useState<StatusFilter>(initialStatus ?? (mode === "preview" ? "ALL" : "UPCOMING"));
   const [sportId, setSportId] = useState<string>("ALL");
   if (!ready) return <PageSkeleton />;
 
   const map = entryMap(db);
   let list = db.matches.filter((m) => !m.bye && m.aId && m.bId);
-  if (status !== "ALL") list = list.filter((m) => m.status === status);
   if (sportId !== "ALL") list = list.filter((m) => m.sportId === sportId);
   list = sortMatches(list);
-  if (status === "COMPLETED") list = list.reverse();
-  const groups = groupByDay(list);
+
+  // Keep the existing status filters, but organize the default view into
+  // Upcoming and Finished sections. Live matches are already highlighted above.
+  const upcomingMatches = list.filter((m) => m.status === "UPCOMING");
+  const finishedMatches = [...list].filter((m) => m.status === "COMPLETED").reverse();
+  const liveMatches = list.filter((m) => m.status === "LIVE");
+
+  const allSections = status === "UPCOMING"
+    ? [{ key: "upcoming", label: "Upcoming", matches: upcomingMatches }]
+    : status === "COMPLETED"
+      ? [{ key: "finished", label: "Finished", matches: finishedMatches }]
+      : status === "LIVE"
+        ? [{ key: "live", label: "Live", matches: liveMatches }]
+        : [
+            { key: "finished", label: "Finished", matches: finishedMatches },
+            { key: "upcoming", label: "Upcoming", matches: upcomingMatches },
+          ];
+  const visibleSections = mode === "preview"
+    ? allSections.map((section) => ({ ...section, matches: section.matches.slice(0, 4) }))
+    : allSections;
 
   return (
     <>
@@ -73,21 +91,31 @@ export function FixturesView() {
         </div>
       </div>
 
-      {groups.length === 0 ? (
+      {visibleSections.every((section) => section.matches.length === 0) ? (
         <div className="glass-panel px-8 py-14 text-center">
           <h3 className="text-2xl font-display font-bold text-white/90">Nothing here yet</h3>
           <p className="text-sm text-white/50 mt-2 font-sans normal-case">No matches fit these filters.</p>
         </div>
       ) : (
         <div className="space-y-12">
-          {groups.map((g) => (
-            <section key={g.key}>
-              <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/50 mb-4 font-sans">{g.label}</h2>
+          {visibleSections.filter((section) => section.matches.length > 0).map((section) => (
+            <section key={section.key} aria-labelledby={`match-section-${section.key}`}>
+              <h2 id={`match-section-${section.key}`} className="text-sm font-bold tracking-[0.2em] uppercase text-[#f59e0b] mb-4 font-sans">{section.label}</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {g.matches.map((m) => (
+                {section.matches.map((m) => (
                   <MatchCard key={m.id} m={m} map={map} />
                 ))}
               </div>
+              {mode === "preview" && section.matches.length > 0 && (
+                <div className="mt-5 flex justify-end">
+                  <Link
+                    href={`/fixtures?tab=${section.key === "finished" ? "finished" : "upcoming"}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#f59e0b]/40 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.16em] text-[#f59e0b] transition-colors hover:bg-[#f59e0b] hover:text-black"
+                  >
+                    View more {section.label.toLowerCase()} <span aria-hidden>→</span>
+                  </Link>
+                </div>
+              )}
             </section>
           ))}
         </div>

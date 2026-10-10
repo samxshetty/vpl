@@ -22,7 +22,7 @@ export function MatchCard({ m, map }: { m: Match; map: EntryMap }) {
       className="glass-panel block px-6 py-5 transition-all hover:border-white/20 hover:-translate-y-0.5 outline-none focus-visible:outline-2 focus-visible:outline-[#f59e0b]"
     >
       <div className="flex items-center justify-between gap-4 mb-4">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 font-sans">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#f59e0b] font-sans">
           <span aria-hidden className="mr-2">{sport?.icon}</span>
           {sport?.name ?? m.sportId} <span className="text-white/20 mx-1">/</span> {m.stage}
         </span>

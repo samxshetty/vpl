@@ -1,5 +1,5 @@
 import { NavBar } from "@/components/NavBar";
-import { SportsGrid } from "@/components/SportsGrid";
+import { FixturesView } from "@/components/FixturesView";
 import { LiveMatchesSection } from "@/components/LiveMatchesSection";
 
 export default function SportsHub() {
@@ -16,11 +16,14 @@ export default function SportsHub() {
           <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6">VISTA PREMIER LEAGUE</h1>
         </div>
         <LiveMatchesSection />
-        <div className="mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tighter text-white">EXPLORE SPORTS</h2>
-          <p className="mt-2 text-sm text-white/50 font-sans normal-case">Choose a category to view its fixtures, results, and standings.</p>
-        </div>
-        <SportsGrid />
+        <section className="mt-2" aria-labelledby="match-centre-heading">
+          <div className="mb-8">
+            <p className="text-[#f59e0b] text-xs font-bold uppercase tracking-[0.25em] mb-3">Fixtures · Live scores · Results</p>
+            <h2 id="match-centre-heading" className="text-3xl md:text-4xl font-bold tracking-tighter text-white">MATCH CENTRE</h2>
+            <p className="mt-2 text-sm text-white/50 font-sans normal-case">Follow every confirmed fixture, live match, and final result across VPL 2026.</p>
+          </div>
+          <FixturesView mode="preview" />
+        </section>
       </div>
     </main>
   );
