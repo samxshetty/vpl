@@ -125,6 +125,7 @@ export function buildSeed(): DB {
   return {
     entries,
     matches: [...cricket, ...football, ...chess, badminton],
+    awards: {},
     formats: {
       cricket: { format: "ROUND_ROBIN", updatedAt: now },
       football: { format: "KNOCKOUT", updatedAt: now },

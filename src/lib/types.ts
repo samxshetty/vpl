@@ -69,10 +69,21 @@ export interface SportFormat {
   updatedAt: string;
 }
 
+/** Final championship placements for one sport. Points are derived from the rulebook, never stored as editable values. */
+export interface SportAward {
+  sportId: string;
+  winnerEntryId: string | null;
+  runnerUpEntryId: string | null;
+  semifinalistAEntryId: string | null;
+  semifinalistBEntryId: string | null;
+  updatedAt: string;
+}
+
 export interface DB {
   entries: Entry[];
   matches: Match[];
   formats: Record<string, SportFormat>;
+  awards: Record<string, SportAward>;
 }
 
 export const FORMAT_LABEL: Record<FormatType, string> = {

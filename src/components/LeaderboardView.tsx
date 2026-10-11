@@ -67,7 +67,7 @@ export function LeaderboardView() {
         )}
       </div>
       <p className="mt-6 text-xs text-gray-500 text-center font-sans normal-case">
-        3 points for a win and 1 for a draw, across every discipline. Individual players score for their class. Net diff is wins minus losses.
+        Championship points follow the VPL rulebook only: Team events 15 / 10 / 5 / 5; individual events 7 / 4 / 2 / 2. Match results are statistics only and do not add points.
       </p>
     </>
   );

@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import type { DB, Entry, FormatType, Match } from "./types";
+import type { DB, Entry, FormatType, Match, SportAward } from "./types";
 import { propagateWinner } from "./tournament";
 import { getSupabase } from "./supabase/client";
 import {
@@ -26,7 +26,7 @@ import {
  * Row Level Security (supabase/schema.sql) is what actually restricts writes to admins.
  */
 
-const EMPTY: DB = { entries: [], matches: [], formats: {} };
+const EMPTY: DB = { entries: [], matches: [], formats: {}, awards: {} };
 
 interface Snapshot {
   ready: boolean;
@@ -60,18 +60,21 @@ async function loadAll() {
     setSnapshot({ ready: true, error: NOT_CONFIGURED });
     return;
   }
-  const [e, m, f] = await Promise.all([
+  const [e, m, f, a] = await Promise.all([
     sb.from("entries").select("*").range(0, 4999),
     sb.from("matches").select("*").range(0, 4999),
     sb.from("sport_formats").select("*"),
+    sb.from("sport_awards").select("*"),
   ]);
-  const err = e.error ?? m.error ?? f.error;
+  const err = e.error ?? m.error ?? f.error ?? a.error;
   if (err) {
     setSnapshot({ ready: true, error: `Couldn't load data: ${err.message}` });
     return;
   }
   const formats: DB["formats"] = {};
   for (const r of (f.data ?? []) as FormatRow[]) formats[r.sport_id] = { format: r.format, updatedAt: r.updated_at };
+  const awards: DB["awards"] = {};
+  for (const r of (a.data ?? []) as SportAwardRow[]) awards[r.sport_id] = awardFromRow(r);
   setSnapshot({
     ready: true,
     error: null,
@@ -79,6 +82,7 @@ async function loadAll() {
       entries: ((e.data ?? []) as EntryRow[]).map(entryFromRow),
       matches: ((m.data ?? []) as MatchRow[]).map(matchFromRow),
       formats,
+      awards,
     },
   });
 }
@@ -91,7 +95,26 @@ function upsertById<T extends { id: string }>(list: T[], item: T): T[] {
 
 type Change = RealtimePostgresChangesPayload<Record<string, unknown>>;
 
-function applyChange(table: "entries" | "matches" | "sport_formats", p: Change) {
+interface SportAwardRow {
+  sport_id: string;
+  winner_entry_id: string | null;
+  runner_up_entry_id: string | null;
+  semifinalist_a_entry_id: string | null;
+  semifinalist_b_entry_id: string | null;
+  updated_at: string;
+}
+
+function awardFromRow(r: SportAwardRow): SportAward {
+  return { sportId: r.sport_id, winnerEntryId: r.winner_entry_id, runnerUpEntryId: r.runner_up_entry_id,
+    semifinalistAEntryId: r.semifinalist_a_entry_id, semifinalistBEntryId: r.semifinalist_b_entry_id, updatedAt: r.updated_at };
+}
+
+function awardToRow(a: SportAward): SportAwardRow {
+  return { sport_id: a.sportId, winner_entry_id: a.winnerEntryId, runner_up_entry_id: a.runnerUpEntryId,
+    semifinalist_a_entry_id: a.semifinalistAEntryId, semifinalist_b_entry_id: a.semifinalistBEntryId, updated_at: a.updatedAt };
+}
+
+function applyChange(table: "entries" | "matches" | "sport_formats" | "sport_awards", p: Change) {
   const db = snapshot.db;
   const isDelete = p.eventType === "DELETE";
 
@@ -109,7 +132,7 @@ function applyChange(table: "entries" | "matches" | "sport_formats", p: Change) 
     } else {
       setSnapshot({ db: { ...db, matches: upsertById(db.matches, matchFromRow(p.new as unknown as MatchRow)) } });
     }
-  } else {
+  } else if (table === "sport_formats") {
     const formats = { ...db.formats };
     if (isDelete) {
       delete formats[(p.old as Partial<FormatRow>).sport_id as string];
@@ -118,6 +141,15 @@ function applyChange(table: "entries" | "matches" | "sport_formats", p: Change) 
       formats[r.sport_id] = { format: r.format, updatedAt: r.updated_at };
     }
     setSnapshot({ db: { ...db, formats } });
+  } else {
+    const awards = { ...db.awards };
+    if (isDelete) {
+      delete awards[(p.old as Partial<SportAwardRow>).sport_id as string];
+    } else {
+      const award = awardFromRow(p.new as unknown as SportAwardRow);
+      awards[award.sportId] = award;
+    }
+    setSnapshot({ db: { ...db, awards } });
   }
 }
 
@@ -142,6 +174,7 @@ function start() {
     .on("postgres_changes", { event: "*", schema: "public", table: "entries" }, (p) => applyChange("entries", p))
     .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, (p) => applyChange("matches", p))
     .on("postgres_changes", { event: "*", schema: "public", table: "sport_formats" }, (p) => applyChange("sport_formats", p))
+    .on("postgres_changes", { event: "*", schema: "public", table: "sport_awards" }, (p) => applyChange("sport_awards", p))
     .subscribe((status) => {
       if (status === "SUBSCRIBED") {
         // After a dropped connection, refetch so nothing missed in between is lost.
@@ -264,6 +297,21 @@ const actions = {
     enqueue("Saving the format", () =>
       getSupabase()!.from("sport_formats").upsert({ sport_id: sportId, format: nextFormat.format, updated_at: nextFormat.updatedAt })
     );
+  },
+
+  saveSportAward(award: SportAward) {
+    const saved = { ...award, updatedAt: new Date().toISOString() };
+    update((d) => ({ ...d, awards: { ...d.awards, [saved.sportId]: saved } }));
+    enqueue("Saving championship placements", () => getSupabase()!.from("sport_awards").upsert(awardToRow(saved)));
+  },
+
+  clearSportAward(sportId: string) {
+    update((d) => {
+      const awards = { ...d.awards };
+      delete awards[sportId];
+      return { ...d, awards };
+    });
+    enqueue("Clearing championship placements", () => getSupabase()!.from("sport_awards").delete().eq("sport_id", sportId));
   },
 
   clearFixtures(sportId: string) {

@@ -1,4 +1,5 @@
 import type { DB, Entry, Match } from "./types";
+import { SPORTS } from "./sports";
 import { entryParts, sortMatches } from "./format";
 
 export type EntryMap = Map<string, Entry>;
@@ -30,10 +31,9 @@ export interface SectionRow {
 }
 
 /**
- * Overall department table, across every discipline.
- * Every finished match counts: 3 points for a win, 1 each for a draw, 0 for a loss.
- * Sides are grouped by section (a team's section, or an individual player's class).
- * Byes and matches between two sides of the same section are ignored.
+ * Overall championship table. VPL points come ONLY from official final placements:
+ * team events: 15/10/5/5; individual events: 7/4/2/2.
+ * Match records remain available for W-D-L/form statistics but never affect points.
  */
 export function overallStandings(db: DB): SectionRow[] {
   const byId = entryMap(db);
@@ -65,18 +65,36 @@ export function overallStandings(db: DB): SectionRow[] {
     if (m.result === "DRAW") {
       ra.drawn++;
       rb.drawn++;
-      ra.points += 1;
-      rb.points += 1;
       ra.form.push("D");
       rb.form.push("D");
     } else {
       const [w, l] = m.result === "A" ? [ra, rb] : [rb, ra];
       w.won++;
       l.lost++;
-      w.points += 3;
       w.form.push("W");
       l.form.push("L");
     }
+  }
+
+  // Award rulebook points once per sport from the saved final placements.
+  // Match wins/draws/losses above are statistics only and never award points.
+  for (const sport of SPORTS) {
+    const award = db.awards?.[sport.id];
+    if (!award) continue;
+    const points = sport.kind === "TEAM" ? [15, 10, 5, 5] : [7, 4, 2, 2];
+    const placements = [
+      award.winnerEntryId,
+      award.runnerUpEntryId,
+      award.semifinalistAEntryId,
+      award.semifinalistBEntryId,
+    ];
+    placements.forEach((entryId, i) => {
+      if (!entryId) return;
+      const entry = byId.get(entryId);
+      if (!entry || entry.sportId !== sport.id) return;
+      const section = sectionOf(entry);
+      if (section) row(section).points += points[i];
+    });
   }
 
   const out = [...rows.values()];
@@ -84,7 +102,8 @@ export function overallStandings(db: DB): SectionRow[] {
     r.diff = r.won - r.lost;
     r.form = r.form.slice(-5);
   }
-  return out.sort((x, y) => y.points - x.points || y.won - x.won || y.diff - x.diff || x.section.localeCompare(y.section));
+  // No match-statistic tie-breakers: order by rulebook points, then section label.
+  return out.sort((x, y) => y.points - x.points || x.section.localeCompare(y.section));
 }
 
 export const signed = (n: number) => (n > 0 ? `+${n}` : String(n));

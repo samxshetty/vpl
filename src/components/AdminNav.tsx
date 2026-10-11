@@ -35,6 +35,12 @@ export function AdminNav() {
             >
               All sports
             </Link>
+            <Link
+              href="/admin/placements"
+              className="text-sm font-semibold uppercase tracking-widest text-white/60 hover:text-white transition-colors"
+            >
+              Placements
+            </Link>
             <SignOutButton />
           </div>
         </div>
