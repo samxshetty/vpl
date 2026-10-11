@@ -314,6 +314,22 @@ const actions = {
     enqueue("Clearing championship placements", () => getSupabase()!.from("sport_awards").delete().eq("sport_id", sportId));
   },
 
+  deleteBracket(sportId: string) {
+    update((d) => {
+      const formats = { ...d.formats };
+      if (formats[sportId]?.format === "KNOCKOUT") delete formats[sportId];
+      return {
+        ...d,
+        matches: d.matches.filter((m) => !(m.sportId === sportId && m.format === "KNOCKOUT")),
+        formats,
+      };
+    });
+    enqueue("Deleting the knockout bracket", () => getSupabase()!.from("matches").delete().eq("sport_id", sportId).eq("format", "KNOCKOUT"));
+    if (snapshot.db.formats[sportId]?.format === "KNOCKOUT") {
+      enqueue("Clearing the knockout format", () => getSupabase()!.from("sport_formats").delete().eq("sport_id", sportId));
+    }
+  },
+
   clearFixtures(sportId: string) {
     update((d) => {
       const formats = { ...d.formats };

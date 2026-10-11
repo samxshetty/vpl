@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, GitBranch, RefreshCw } from "lucide-react";
+import { AlertTriangle, GitBranch, RefreshCw, Trash2 } from "lucide-react";
 import { AdminNav } from "@/components/AdminNav";
 import { useStore } from "@/lib/store";
 import { SPORTS } from "@/lib/sports";
@@ -64,7 +64,7 @@ function makeBracket(sportId: string, entrants: number, venue: string): Match[] 
 }
 
 export function BracketsAdmin() {
-  const { ready, db, generateFixtures } = useStore();
+  const { ready, db, generateFixtures, deleteBracket } = useStore();
   const [sizes, setSizes] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -74,6 +74,25 @@ export function BracketsAdmin() {
     for (const sport of SPORTS) map[sport.id] = db.matches.filter((m) => m.sportId === sport.id && m.format === "KNOCKOUT");
     return map;
   }, [db.matches]);
+
+  const removeBracket = (sportId: string) => {
+    const sport = SPORTS.find((s) => s.id === sportId);
+    const bracketMatches = db.matches.filter((m) => m.sportId === sportId && m.format === "KNOCKOUT");
+    if (!sport || bracketMatches.length === 0) return;
+    const hasResults = bracketMatches.some((m) => m.status === "COMPLETED" || m.result !== null || m.scoreA !== "" || m.scoreB !== "");
+    const detail = hasResults
+      ? " This bracket contains match results/scores, which will also be deleted."
+      : "";
+    if (!window.confirm(`Delete the knockout bracket for ${sport.name}? This permanently deletes ${bracketMatches.length} bracket matches.${detail} Other non-knockout matches will be kept.`)) return;
+    setBusy(sportId);
+    setMessage(null);
+    try {
+      deleteBracket(sportId);
+      setMessage(`${sport.name}: knockout bracket deleted. Other non-knockout matches were kept.`);
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const generate = (sportId: string) => {
     const sport = SPORTS.find((s) => s.id === sportId);
@@ -134,6 +153,11 @@ export function BracketsAdmin() {
                   <Button variant="primary" onClick={() => generate(sport.id)} disabled={!ready || busy !== null}>
                     {busy === sport.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : hasBracket ? "Regenerate" : "Generate bracket"}
                   </Button>
+                  {hasBracket && (
+                    <Button variant="danger" onClick={() => removeBracket(sport.id)} disabled={!ready || busy !== null}>
+                      <Trash2 className="w-4 h-4" /> Delete bracket
+                    </Button>
+                  )}
                 </div>
                 {allMatches.length > 0 && !hasBracket && <p className="mt-3 flex gap-2 text-xs text-amber-200/80"><AlertTriangle className="w-4 h-4 shrink-0" />Generating replaces this sport's existing match records.</p>}
                 <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
