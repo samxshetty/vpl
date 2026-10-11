@@ -45,7 +45,22 @@ export function EntryEditor({
 function TeamForm({ sport, entry, isNew, onClose }: { sport: Sport; entry: TeamEntry; isNew: boolean; onClose: () => void }) {
   const { db, saveEntry } = useStore();
   const [section, setSection] = useState(entry.section);
-  const sections = ["3A", "3B", "3C", "3D", "3E", "5A", "5B", "5C", "5D", "7A", "7B", "7C", "7D"];
+
+const sections = [
+  "2A",
+  "2B",
+  "2C",
+  "2D",
+  "2E",
+  "3A",
+  "3B",
+  "3C",
+  "3D",
+  "3E",
+  "4A",
+  "4B",
+  "4C",
+];
   const [players, setPlayers] = useState<Player[]>(entry.players.length ? entry.players : [{ id: uid("p"), name: "", usn: "" }]);
   const [paste, setPaste] = useState(false);
   const [pasted, setPasted] = useState("");

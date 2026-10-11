@@ -70,7 +70,11 @@ export function FixturesView({
 
   const map = entryMap(db);
 
-  let list = db.matches.filter((m) => !m.bye && m.aId && m.bId);
+  // Show generated knockout fixtures even while one or both sides are TBD.
+  // Keep byes hidden because they are automatic advances, not actual matches.
+  let list = db.matches.filter(
+    (m) => !m.bye && ((Boolean(m.aId) && Boolean(m.bId)) || m.format === "KNOCKOUT")
+  );
 
   if (sportId !== "ALL") {
     list = list.filter((m) => m.sportId === sportId);
