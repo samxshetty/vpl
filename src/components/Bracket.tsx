@@ -76,9 +76,44 @@ function Node({ m, feeders, byId, onOpen }: NodeProps) {
         </>
       )}
       <div className="flex items-center py-2">
-        <Card m={m} byId={byId} onOpen={onOpen} />
+        {m.bye ? (
+          <ByeCard m={m} byId={byId} onOpen={onOpen} />
+        ) : (
+          <Card m={m} byId={byId} onOpen={onOpen} />
+        )}
       </div>
     </div>
+  );
+}
+
+
+function ByeCard({
+  m,
+  byId,
+  onOpen,
+}: {
+  m: Match;
+  byId: Map<string, Entry>;
+  onOpen: (m: Match) => void;
+}) {
+  const player = entryParts(m.aId ? byId.get(m.aId) : null);
+  return (
+    <button
+      onClick={() => onOpen(m)}
+      aria-label={`Edit bye entrant ${player.title}, ${m.stage}`}
+      className="w-64 rounded-xl border border-dashed border-[#f59e0b]/35 bg-[#f59e0b]/[0.04] px-4 py-3 text-left transition-colors hover:border-[#f59e0b]/60 hover:bg-[#f59e0b]/[0.08]"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className={`min-w-0 truncate font-display text-base font-bold ${m.aId ? "text-white/85" : "text-white/30"}`}>
+          {player.title}
+        </span>
+        <span className="shrink-0 rounded-md bg-[#f59e0b]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#f59e0b]">
+          Bye
+        </span>
+      </div>
+      {player.sub && <div className="mt-1 truncate text-xs font-semibold text-white/40">{player.sub}</div>}
+      <div className="mt-1 text-[11px] text-white/35">Advances automatically · not a match</div>
+    </button>
   );
 }
 
