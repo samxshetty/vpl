@@ -36,6 +36,12 @@ export function AdminNav() {
               All sports
             </Link>
             <Link
+              href="/admin/brackets"
+              className="text-sm font-semibold uppercase tracking-widest text-white/60 hover:text-white transition-colors"
+            >
+              Brackets
+            </Link>
+            <Link
               href="/admin/placements"
               className="text-sm font-semibold uppercase tracking-widest text-white/60 hover:text-white transition-colors"
             >

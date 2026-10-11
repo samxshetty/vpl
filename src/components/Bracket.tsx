@@ -94,17 +94,20 @@ function Card({
   const a = entryParts(m.aId ? byId.get(m.aId) : null);
   const b = entryParts(m.bId ? byId.get(m.bId) : null);
   const done = m.status === "COMPLETED";
-  const row = (side: "A" | "B", p: { title: string }, score: string, tbd: boolean) => {
+  const row = (side: "A" | "B", p: { title: string; sub: string }, score: string, tbd: boolean) => {
     const won = done && m.result === side;
     return (
       <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-        <span
-          className={clsx(
-            "truncate font-display text-lg font-bold tracking-tight",
-            tbd ? "text-white/25" : won ? "text-white" : done ? "text-white/45" : "text-white/85"
-          )}
-        >
-          {p.title}
+        <span className="min-w-0 flex-1">
+          <span
+            className={clsx(
+              "block truncate font-display text-lg font-bold tracking-tight",
+              tbd ? "text-white/25" : won ? "text-white" : done ? "text-white/45" : "text-white/85"
+            )}
+          >
+            {p.title}
+          </span>
+          {p.sub && <span className="block truncate text-xs font-semibold text-white/40 mt-0.5">{p.sub}</span>}
         </span>
         <span className={clsx("font-numbers text-xl tracking-wider", won ? "text-[#f59e0b]" : "text-white/40")}>
           {score}
