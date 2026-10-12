@@ -29,9 +29,6 @@ export function LeaderboardView() {
                 <tr>
                   <th className="px-6 py-4 font-medium">Rank</th>
                   <th className="px-6 py-4 font-medium">Section Franchise</th>
-                  <th className="px-6 py-4 font-medium text-center">Matches</th>
-                  <th className="px-6 py-4 font-medium text-center">W-D-L</th>
-                  <th className="px-6 py-4 font-medium text-center">Form (Overall)</th>
                   <th className="px-6 py-4 font-medium text-center">Form (Qualifiers)</th>
                   <th className="px-6 py-4 font-bold text-[#f59e0b] text-right">VPL Pts</th>
                 </tr>
@@ -43,20 +40,6 @@ export function LeaderboardView() {
                       <span className="inline-block w-6 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
                     </td>
                     <td className="px-6 py-5 font-bold text-lg group-hover:text-[#f59e0b] transition-colors">{s.section}</td>
-                    <td className="px-6 py-5 text-gray-400 text-center">{s.played}</td>
-                    <td className="px-6 py-5 text-gray-400 text-center font-mono">
-                      {s.won}-{s.drawn}-{s.lost}
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex gap-1.5 justify-center">
-                        {s.form.length === 0 && <span className="text-gray-600">–</span>}
-                        {s.form.map((f, j) => (
-                          <span key={j} className={clsx("w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold", FORM_STYLE[f])}>
-                            {f}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
                     <td className="px-6 py-5">
                       <div className="flex gap-1.5 justify-center">
                         {s.qualifierForm.length === 0 && <span className="text-gray-600">–</span>}
