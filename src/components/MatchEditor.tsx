@@ -31,8 +31,13 @@ export function MatchEditor({
   const [venue, setVenue] = useState(match.venue);
   // A knockout fixture with an unassigned side is always editable as Upcoming.
   // This also recovers older/stale records that were saved with an invalid status.
+  const hasOneSide = Boolean(match.aId) !== Boolean(match.bId);
+  const hasValidWalkover =
+    match.status === "COMPLETED" &&
+    hasOneSide &&
+    ((match.aId && match.result === "A") || (match.bId && match.result === "B"));
   const [status, setStatus] = useState<MatchStatus>(
-    match.format === "KNOCKOUT" && !match.bye && (!match.aId || !match.bId)
+    match.format === "KNOCKOUT" && !match.bye && (!match.aId || !match.bId) && !hasValidWalkover
       ? "UPCOMING"
       : match.status
   );
@@ -76,10 +81,19 @@ export function MatchEditor({
   if (isBye && !aId) {
     errors.status = `Assign a ${noun} to side A before saving a bye.`;
   }
-  if (!isBye && (status === "LIVE" || status === "COMPLETED") && (!aId || !bId)) {
-    errors.status = `Both sides need a ${noun} before a match can be live or finished.`;
+  if (!isBye && status === "LIVE" && (!aId || !bId)) {
+    errors.status = `Both sides need a ${noun} before a match can go live.`;
   }
-  if (status === "COMPLETED" && !result && aId && bId) errors.result = "Choose who won.";
+  if (!isBye && status === "COMPLETED" && !aId && !bId) {
+    errors.status = `Assign at least one ${noun} before completing this match.`;
+  }
+  if (!isBye && status === "COMPLETED" && aId && !bId && result !== "A") {
+    errors.result = `Choose side A as the winner because side B is unassigned.`;
+  }
+  if (!isBye && status === "COMPLETED" && !aId && bId && result !== "B") {
+    errors.result = `Choose side B as the winner because side A is unassigned.`;
+  }
+  if (status === "COMPLETED" && aId && bId && !result) errors.result = "Choose who won.";
 
   const draft: Match = {
     ...match,
@@ -99,12 +113,22 @@ export function MatchEditor({
 
   const changeStatus = (next: MatchStatus) => {
     setStatus(next);
-    // Convenience: if both scores are plain numbers, suggest the result.
-    if (next === "COMPLETED" && !result) {
-      const x = Number(scoreA);
-      const y = Number(scoreB);
-      if (scoreA.trim() && scoreB.trim() && !Number.isNaN(x) && !Number.isNaN(y)) {
-        setResult(x > y ? "A" : x < y ? "B" : isKnockout ? null : "DRAW");
+    if (next === "COMPLETED") {
+      // A walkover can be completed with one assigned participant; that participant advances.
+      if (isKnockout && Boolean(aId) !== Boolean(bId)) {
+        setResult(aId ? "A" : "B");
+        setScoreA("");
+        setScoreB("");
+        setNote("Walkover");
+        return;
+      }
+      // Convenience: if both scores are plain numbers, suggest the result.
+      if (!result) {
+        const x = Number(scoreA);
+        const y = Number(scoreB);
+        if (scoreA.trim() && scoreB.trim() && !Number.isNaN(x) && !Number.isNaN(y)) {
+          setResult(x > y ? "A" : x < y ? "B" : isKnockout ? null : "DRAW");
+        }
       }
     }
   };
@@ -252,12 +276,12 @@ export function MatchEditor({
               <Select id={id} value={status} onChange={(e) => changeStatus(e.target.value as MatchStatus)}>
                 <option value="UPCOMING">Upcoming</option>
                 <option value="LIVE" disabled={isKnockout && !isBye && !hasBothSides}>Live</option>
-                <option value="COMPLETED" disabled={isKnockout && !isBye && !hasBothSides}>Completed</option>
+                <option value="COMPLETED" disabled={isKnockout && !isBye && !aId && !bId}>Completed</option>
               </Select>
             )}
           </Field>
 
-          {status !== "UPCOMING" && !isBye && (
+          {status !== "UPCOMING" && !isBye && hasBothSides && (
             <>
               <Field label={`Score: ${aId ? nameA : "A"}`} hint="Any format works, for example 112/4 or 21-18, 21-14.">
                 {(id) => <input id={id} className={inputClass} value={scoreA} onChange={(e) => setScoreA(e.target.value)} />}
@@ -274,8 +298,8 @@ export function MatchEditor({
                 {(id) => (
                   <Select id={id} value={result ?? ""} onChange={(e) => setResult((e.target.value || null) as MatchResult)}>
                     <option value="">Choose a result</option>
-                    <option value="A">{aId ? `${nameA} won` : "A won"}</option>
-                    <option value="B">{bId ? `${nameB} won` : "B won"}</option>
+                    {aId && <option value="A">{`${nameA} won`}</option>}
+                    {bId && <option value="B">{`${nameB} won`}</option>}
                     {!isKnockout && <option value="DRAW">Draw</option>}
                   </Select>
                 )}
