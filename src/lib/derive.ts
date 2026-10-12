@@ -24,10 +24,10 @@ export interface SectionRow {
   drawn: number;
   lost: number;
   points: number;
-  /** wins minus losses */
-  diff: number;
-  /** last five results, oldest first */
+  /** Last five overall results, oldest first. */
   form: Array<"W" | "D" | "L">;
+  /** Last five knockout/qualifier results, oldest first. */
+  qualifierForm: Array<"W" | "D" | "L">;
 }
 
 /**
@@ -41,7 +41,7 @@ export function overallStandings(db: DB): SectionRow[] {
   const row = (section: string) => {
     let r = rows.get(section);
     if (!r) {
-      r = { section, played: 0, won: 0, drawn: 0, lost: 0, points: 0, diff: 0, form: [] };
+      r = { section, played: 0, won: 0, drawn: 0, lost: 0, points: 0, form: [], qualifierForm: [] };
       rows.set(section, r);
     }
     return r;
@@ -67,12 +67,20 @@ export function overallStandings(db: DB): SectionRow[] {
       rb.drawn++;
       ra.form.push("D");
       rb.form.push("D");
+      if (m.format === "KNOCKOUT") {
+        ra.qualifierForm.push("D");
+        rb.qualifierForm.push("D");
+      }
     } else {
       const [w, l] = m.result === "A" ? [ra, rb] : [rb, ra];
       w.won++;
       l.lost++;
       w.form.push("W");
       l.form.push("L");
+      if (m.format === "KNOCKOUT") {
+        w.qualifierForm.push("W");
+        l.qualifierForm.push("L");
+      }
     }
   }
 
@@ -99,8 +107,8 @@ export function overallStandings(db: DB): SectionRow[] {
 
   const out = [...rows.values()];
   for (const r of out) {
-    r.diff = r.won - r.lost;
     r.form = r.form.slice(-5);
+    r.qualifierForm = r.qualifierForm.slice(-5);
   }
   // No match-statistic tie-breakers: order by rulebook points, then section label.
   return out.sort((x, y) => y.points - x.points || x.section.localeCompare(y.section));

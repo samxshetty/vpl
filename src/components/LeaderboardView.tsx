@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { useLiveDB } from "@/lib/store";
-import { overallStandings, signed } from "@/lib/derive";
+import { overallStandings } from "@/lib/derive";
 import { LiveError, PageSkeleton } from "@/components/PublicBits";
 
 const FORM_STYLE = {
@@ -31,8 +31,8 @@ export function LeaderboardView() {
                   <th className="px-6 py-4 font-medium">Section Franchise</th>
                   <th className="px-6 py-4 font-medium text-center">Matches</th>
                   <th className="px-6 py-4 font-medium text-center">W-D-L</th>
-                  <th className="px-6 py-4 font-medium text-center">Form Guide</th>
-                  <th className="px-6 py-4 font-medium text-center">Net Diff</th>
+                  <th className="px-6 py-4 font-medium text-center">Form (Overall)</th>
+                  <th className="px-6 py-4 font-medium text-center">Form (Qualifiers)</th>
                   <th className="px-6 py-4 font-bold text-[#f59e0b] text-right">VPL Pts</th>
                 </tr>
               </thead>
@@ -57,7 +57,16 @@ export function LeaderboardView() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-gray-400 text-center font-mono">{signed(s.diff)}</td>
+                    <td className="px-6 py-5">
+                      <div className="flex gap-1.5 justify-center">
+                        {s.qualifierForm.length === 0 && <span className="text-gray-600">–</span>}
+                        {s.qualifierForm.map((f, j) => (
+                          <span key={j} className={clsx("w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold", FORM_STYLE[f])}>
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
                     <td className="px-6 py-5 font-bold text-2xl text-[#f59e0b] text-right font-mono tracking-tighter">{s.points}</td>
                   </tr>
                 ))}
