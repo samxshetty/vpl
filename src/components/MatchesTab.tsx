@@ -14,7 +14,15 @@ import { Button, EmptyState, StatusBadge } from "./ui";
 type View = "list" | "bracket" | "standings";
 type Filter = "ALL" | MatchStatus;
 
-export function MatchesTab({ sport, onSetUp }: { sport: Sport; onSetUp: () => void }) {
+export function MatchesTab({
+  sport,
+  onSetUp,
+  onManageEntries,
+}: {
+  sport: Sport;
+  onSetUp: () => void;
+  onManageEntries: () => void;
+}) {
   const { db } = useStore();
   const entries = db.entries.filter((e) => e.sportId === sport.id);
   const all = db.matches.filter((m) => m.sportId === sport.id);
@@ -55,6 +63,14 @@ export function MatchesTab({ sport, onSetUp }: { sport: Sport; onSetUp: () => vo
       <EmptyState
         title={`Add ${noun} first`}
         body={`A match needs two ${noun}. Add at least two, then come back to set up matches.`}
+        action={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button variant="primary" onClick={onManageEntries}>
+              <Plus className="w-4 h-4" /> {sport.kind === "TEAM" ? "Add team" : "Add player"}
+            </Button>
+            <Button onClick={onSetUp}>Format &amp; schedule</Button>
+          </div>
+        }
       />
     );
   }

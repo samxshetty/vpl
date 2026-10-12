@@ -119,7 +119,11 @@ function Loaded({ sportId }: { sportId: string }) {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === "matches" && <MatchesTab sport={sport} onSetUp={() => setTab("schedule")} />}
+        {tab === "matches" && <MatchesTab
+          sport={sport}
+          onSetUp={() => setTab("schedule")}
+          onManageEntries={() => setTab("entries")}
+        />}
         {tab === "entries" && <EntriesTab sport={sport} />}
         {tab === "schedule" && <ScheduleTab sport={sport} onGenerated={() => setTab("matches")} />}
       </div>

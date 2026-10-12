@@ -54,6 +54,9 @@ export function MatchEditor({
   if (aId && aId === bId) errors.b = `Pick two different ${noun}s.`;
   if (date && !time) errors.time = "Add a start time.";
   if (!date && time) errors.date = "Add a date.";
+  if (isBye && !aId) {
+    errors.status = `Assign a ${noun} to side A before saving a bye.`;
+  }
   if (!isBye && (status === "LIVE" || status === "COMPLETED") && (!aId || !bId)) {
     errors.status = `Both sides need a ${noun} before a match can be live or finished.`;
   }
