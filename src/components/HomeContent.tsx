@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { ChevronRight, Activity, Trophy } from "lucide-react";
+import { entryMap, overallStandings, recentResults, resultText, scoreText, sideTitle } from "@/lib/derive";
 import { useLiveDB } from "@/lib/store";
 import { getSport } from "@/lib/sports";
 import { fmtTime, sortMatches } from "@/lib/format";
-import { entryMap, overallStandings, recentResults, resultText, scoreText, sideTitle, signed } from "@/lib/derive";
 import { LiveError, MatchCard, PageSkeleton } from "@/components/PublicBits";
 
 export function HomeContent() {
@@ -135,7 +135,6 @@ export function HomeContent() {
                     <th className="pb-4 font-semibold">Rank</th>
                     <th className="pb-4 font-semibold">Franchise</th>
                     <th className="pb-4 font-semibold text-center">Played</th>
-                    <th className="pb-4 font-semibold text-center">Diff</th>
                     <th className="pb-4 font-semibold text-right text-[#f59e0b]">Points</th>
                   </tr>
                 </thead>
@@ -159,7 +158,6 @@ export function HomeContent() {
                         <span className="text-xl font-display font-bold tracking-tight group-hover:text-white text-white/80 transition-colors">{s.section}</span>
                       </td>
                       <td className="py-5 text-white/40 text-center font-numbers text-xl">{s.played}</td>
-                      <td className="py-5 text-white/40 text-center font-numbers text-xl">{signed(s.diff)}</td>
                       <td className="py-5 font-numbers font-bold text-3xl text-[#f59e0b] text-right drop-shadow-[0_0_10px_rgba(245,158,11,0.2)]">{s.points}</td>
                     </tr>
                   ))}
