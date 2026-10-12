@@ -84,9 +84,6 @@ export function MatchEditor({
   if (!isBye && status === "LIVE" && (!aId || !bId)) {
     errors.status = `Both sides need a ${noun} before a match can go live.`;
   }
-  if (!isBye && status === "COMPLETED" && !aId && !bId) {
-    errors.status = `Assign at least one ${noun} before completing this match.`;
-  }
   if (!isBye && status === "COMPLETED" && aId && !bId && result !== "A") {
     errors.result = `Choose side A as the winner because side B is unassigned.`;
   }
@@ -114,12 +111,20 @@ export function MatchEditor({
   const changeStatus = (next: MatchStatus) => {
     setStatus(next);
     if (next === "COMPLETED") {
-      // A walkover can be completed with one assigned participant; that participant advances.
+      // If nobody is assigned, allow the fixture to be closed as a no-show.
+      // With one assigned participant, that participant advances by walkover.
+      if (!aId && !bId) {
+        setResult(null);
+        setScoreA("");
+        setScoreB("");
+        setNote("No-show — neither side appeared");
+        return;
+      }
       if (isKnockout && Boolean(aId) !== Boolean(bId)) {
         setResult(aId ? "A" : "B");
         setScoreA("");
         setScoreB("");
-        setNote("Walkover");
+        setNote("Walkover — opponent did not attend");
         return;
       }
       // Convenience: if both scores are plain numbers, suggest the result.
@@ -276,7 +281,7 @@ export function MatchEditor({
               <Select id={id} value={status} onChange={(e) => changeStatus(e.target.value as MatchStatus)}>
                 <option value="UPCOMING">Upcoming</option>
                 <option value="LIVE" disabled={isKnockout && !isBye && !hasBothSides}>Live</option>
-                <option value="COMPLETED" disabled={isKnockout && !isBye && !aId && !bId}>Completed</option>
+                <option value="COMPLETED">Completed</option>
               </Select>
             )}
           </Field>
@@ -292,7 +297,12 @@ export function MatchEditor({
             </>
           )}
 
-          {status === "COMPLETED" && !isBye && (
+          {status === "COMPLETED" && !isBye && !aId && !bId && (
+            <Field label="Completion note" hint="No participants are assigned, so this will be recorded as a no-show." className="sm:col-span-2">
+              {(id) => <input id={id} className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} placeholder="No-show — neither side appeared" />}
+            </Field>
+          )}
+          {status === "COMPLETED" && !isBye && (aId || bId) && (
             <>
               <Field label="Result" error={err("result")}>
                 {(id) => (
