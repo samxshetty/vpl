@@ -1,4 +1,4 @@
--- VPL 2026: seed the 13 section teams into every TEAM category.
+-- VPL 2026: seed the 13 current section teams into every TEAM category.
 -- Safe to re-run: it skips a section that already exists for that category.
 -- Run in Supabase SQL Editor after deploying the matching frontend code.
 
@@ -20,9 +20,9 @@ with team_categories(sport_id) as (
     ('dodgeball')
 ),
 sections(section) as (
-  values ('3A'), ('3B'), ('3C'), ('3D'), ('3E'),
-         ('5A'), ('5B'), ('5C'), ('5D'),
-         ('7A'), ('7B'), ('7C'), ('7D')
+  values ('2A'), ('2B'), ('2C'), ('2D'), ('2E'),
+         ('3A'), ('3B'), ('3C'), ('3D'), ('3E'),
+         ('4A'), ('4B'), ('4C')
 )
 insert into public.entries (id, sport_id, kind, name, section, players, usn, class_name)
 select
@@ -44,7 +44,7 @@ where not exists (
     and upper(trim(coalesce(existing.section, ''))) = s.section
 );
 
--- Verify: expected 13 team entries for each team category.
+-- Verify: expected 13 current-section team entries per category (pre-existing obsolete entries are not deleted).
 select sport_id, count(*) as section_teams
 from public.entries
 where kind = 'team'
