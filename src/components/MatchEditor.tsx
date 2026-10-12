@@ -29,7 +29,13 @@ export function MatchEditor({
   const [date, setDate] = useState(match.startsAt?.slice(0, 10) ?? "");
   const [time, setTime] = useState(match.startsAt?.slice(11, 16) ?? "");
   const [venue, setVenue] = useState(match.venue);
-  const [status, setStatus] = useState<MatchStatus>(match.status);
+  // A knockout fixture with an unassigned side is always editable as Upcoming.
+  // This also recovers older/stale records that were saved with an invalid status.
+  const [status, setStatus] = useState<MatchStatus>(
+    match.format === "KNOCKOUT" && !match.bye && (!match.aId || !match.bId)
+      ? "UPCOMING"
+      : match.status
+  );
   const [scoreA, setScoreA] = useState(match.scoreA);
   const [scoreB, setScoreB] = useState(match.scoreB);
   const [result, setResult] = useState<MatchResult>(match.result);
@@ -41,6 +47,19 @@ export function MatchEditor({
   // Later knockout rounds are filled by the winners of earlier ones.
   const sidesLocked = isKnockout && match.round > 1 && !match.bye;
   const noun = sport.kind === "TEAM" ? "team" : "player";
+  const hasBothSides = Boolean(aId && bId && aId !== bId);
+
+  const changeSide = (side: "A" | "B", value: string) => {
+    if (side === "A") setAId(value);
+    else setBId(value);
+    // Never leave an incomplete knockout fixture marked Live/Completed.
+    if (isKnockout && !isBye && (!value || (side === "A" ? value === bId : value === aId))) {
+      setStatus("UPCOMING");
+      setResult(null);
+      setScoreA("");
+      setScoreB("");
+    }
+  };
 
   const venues = useMemo(
     () => Array.from(new Set([sport.defaultVenue, ...db.matches.map((m) => m.venue).filter(Boolean)])),
@@ -172,7 +191,7 @@ export function MatchEditor({
           hint={sidesLocked ? "Filled in automatically from the previous round." : undefined}
         >
           {(id) => (
-            <Select id={id} value={aId} disabled={sidesLocked} onChange={(e) => setAId(e.target.value)}>
+            <Select id={id} value={aId} disabled={sidesLocked} onChange={(e) => changeSide("A", e.target.value)}>
               <option value="">To be decided</option>
               {entries.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -184,7 +203,7 @@ export function MatchEditor({
         </Field>
         <Field label={sport.kind === "TEAM" ? "Team B" : "Player B"} error={err("b")}>
           {(id) => (
-            <Select id={id} value={bId} disabled={sidesLocked || isBye} onChange={(e) => setBId(e.target.value)}>
+            <Select id={id} value={bId} disabled={sidesLocked || isBye} onChange={(e) => changeSide("B", e.target.value)}>
               <option value="">To be decided</option>
               {entries.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -232,8 +251,8 @@ export function MatchEditor({
             {(id) => (
               <Select id={id} value={status} onChange={(e) => changeStatus(e.target.value as MatchStatus)}>
                 <option value="UPCOMING">Upcoming</option>
-                <option value="LIVE">Live</option>
-                <option value="COMPLETED">Completed</option>
+                <option value="LIVE" disabled={isKnockout && !isBye && !hasBothSides}>Live</option>
+                <option value="COMPLETED" disabled={isKnockout && !isBye && !hasBothSides}>Completed</option>
               </Select>
             )}
           </Field>
